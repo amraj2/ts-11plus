@@ -1,0 +1,9 @@
+.git
+.venv
+.claude
+.vscode
+__pycache__
+*.pyc
+tests
+tools
+README.md
