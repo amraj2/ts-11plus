@@ -76,3 +76,34 @@ def test_service_worker(client):
 
 def test_unknown_route_is_404(client):
     assert client.get("/nope").status_code == 404
+
+
+def test_character_roster_has_distinct_artwork_and_offline_assets(client):
+    html = client.get('/stumble').get_data(as_text=True)
+    artwork = json.loads(re.search(r"data-character-artwork='([^']+)'", html).group(1))
+    assert len(artwork) == 50
+    assert len(set(artwork.values())) == 50
+    assert artwork['pip'].startswith('/static/art/runner-pixel-sheet.png?v=')
+    sw = client.get('/sw.js').get_data(as_text=True)
+    precache = json.loads(re.search(r'const PRECACHE = (\[.*\]);', sw).group(1))
+    for character, path in artwork.items():
+        assert path in precache, character
+        response = client.get(path)
+        assert response.status_code == 200, character
+        assert response.data.startswith(b'\x89PNG\r\n\x1a\n'), character
+
+
+def test_music_tracks_are_playable_and_available_offline(client):
+    html = client.get('/stumble').get_data(as_text=True)
+    tracks = re.findall(r'data-(?:hill|lab|dusk)="([^"]+)"', html)
+    assert len(tracks) == 3
+    sw = client.get('/sw.js').get_data(as_text=True)
+    precache = json.loads(re.search(r'const PRECACHE = (\[.*\]);', sw).group(1))
+    for track in tracks:
+        assert track in precache
+        whole = client.get(track)
+        assert whole.mimetype == 'audio/mpeg'
+        partial = client.get(track, headers={'Range': 'bytes=0-1023'})
+        assert partial.status_code == 206
+        assert partial.data == whole.data[:1024]
+        assert partial.headers['Content-Range'] == f'bytes 0-1023/{len(whole.data)}'

@@ -25,13 +25,33 @@ self.addEventListener("fetch", (event) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy));
         return res;
-      }).catch(() => caches.match(req).then((hit) => hit || caches.match("/stumble")))
+      }).catch(() => caches.match(req, {ignoreVary: true}).then((hit) => hit || caches.match("/stumble")))
     );
     return;
   }
+  // Static responses vary on Accept-Encoding, but Cache Storage holds decoded bodies.
+  // Ignore that transport-only variation so media and offline navigation find precached assets.
+  // Media elements request byte ranges, including during offline playback and seeking.
+  if (url.pathname.startsWith('/static/audio/') && req.headers.has('range')) {
+    event.respondWith(caches.match(req, {ignoreVary: true}).then(async (hit) => {
+      if (!hit) return fetch(req);
+      const match = /^bytes=(\d*)-(\d*)$/.exec(req.headers.get('range'));
+      if (!match || (!match[1] && !match[2])) return hit;
+      const data = await hit.arrayBuffer(), size = data.byteLength;
+      const start = match[1] ? Number(match[1]) : Math.max(0, size - Number(match[2]));
+      const end = match[1] && match[2] ? Math.min(Number(match[2]), size - 1) : size - 1;
+      if (start >= size || start > end) return new Response(null, {status: 416, headers: {'Content-Range': `bytes */${size}`}});
+      return new Response(data.slice(start, end + 1), {status: 206, headers: {
+        'Content-Type': hit.headers.get('Content-Type') || 'audio/mpeg',
+        'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': String(end - start + 1),
+        'Accept-Ranges': 'bytes',
+      }});
+    }));
+    return;
+  }
   event.respondWith(                                    // versioned assets: cache first
-    caches.match(req).then((hit) => hit || fetch(req).then((res) => {
-      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
+    caches.match(req, {ignoreVary: true}).then((hit) => hit || fetch(req).then((res) => {
+      if (res.status === 200) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
       return res;
     }))
   );

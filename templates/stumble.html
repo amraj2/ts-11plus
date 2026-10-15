@@ -12,34 +12,37 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Tiny Spark">
   <link rel="stylesheet" href="{{ static_v('stumble.css') }}">
+  <link rel="stylesheet" href="{{ static_v('pixel.css') }}">
 </head>
-<body>
+<body data-character-artwork='{{ character_artwork|tojson }}' data-world-sheet="{{ static_v('art/world-pixel-atlas.png') }}" style="--world-art:url('{{ static_v('art/world-pixel-atlas.png') }}')" data-runner-sheet="{{ static_v('art/runner-pixel-sheet.png') }}">
+  <audio id="music" loop preload="none" aria-hidden="true"
+    data-hill="{{ static_v('audio/sunny-overworld.mp3') }}"
+    data-lab="{{ static_v('audio/ascension-run.mp3') }}"
+    data-dusk="{{ static_v('audio/dusk-arpeggio.mp3') }}"></audio>
   <!-- LOBBY -->
   <section id="lobby" class="screen">
     <a class="back" href="{{ url_for('index') }}">&larr; Practice mode</a> <a class="back" href="{{ url_for('privacy') }}" style="float:right">Privacy</a>
     <div class="lobby-grid">
       <div class="lobby-main">
-        <div class="logo">Spark<br>Stumble</div>
+        <div class="eyebrow">TINY SPARK · THE QUESTION RACE</div>
+        <h1 class="logo"><img src="{{ static_v('art/pixel-logo.svg') }}" alt="Spark Stumble" width="440" height="190"></h1>
         <p class="tagline">32 players. 3 rounds. Answer the gates, beat the crowd, win the crown!</p>
         <div id="dailyBonus" class="daily" hidden></div>
-        <button class="btn btn-go" id="playBtn">PLAY</button>
+        <button class="btn btn-go" id="playBtn">LET’S RACE <span aria-hidden="true">↗</span></button>
         <div class="chips">
-          <div class="chip"><b id="crownCount">0</b><span>👑 crowns</span></div>
-          <div class="chip"><b id="coinCount">0</b><span>🪙 coins</span></div>
+          <div class="chip"><b id="crownCount">0</b><span><i class="pixel-icon crown" aria-hidden="true"></i> crowns</span></div>
+          <div class="chip"><b id="coinCount">0</b><span><i class="pixel-icon coin" aria-hidden="true"></i> coins</span></div>
           <div class="chip"><b id="bestRank">–</b><span>best finish</span></div>
         </div>
         <div class="level"><span id="levelLabel">Level 1</span><div class="level-bar"><div id="levelFill"></div></div></div>
       </div>
       <div class="lobby-side">
-        <canvas id="preview" width="220" height="220" aria-label="Your bean"></canvas>
-        <div class="name-row">
-          <select id="nameA" aria-label="Nickname first word"></select>
-          <select id="nameB" aria-label="Nickname second word"></select>
-        </div>
-        <h3>Colour</h3><div class="swatches" id="swatches"></div>
-        <h3>Hats</h3><div class="hats" id="hats"></div>
+        <div class="runner-heading"><span>YOUR RUNNER</span><span class="ready-badge">READY TO RACE</span></div>
+        <canvas id="preview" width="440" height="440" role="img" aria-label="Your customised jetpack runner"></canvas>
+        <div class="name-row"><b id="characterName">Pip</b><span id="characterCount"></span></div>
+        <h3>Characters</h3><div class="characters" id="characters"></div>
         <div class="toggles">
-          <label><input type="checkbox" id="soundToggle" checked> Sound</label>
+          <label><input type="checkbox" id="soundToggle" checked> Sound &amp; music</label>
           <label><input type="checkbox" id="relaxedToggle"> Relaxed mode (extra thinking time)</label>
         </div>
       </div>
@@ -49,6 +52,7 @@
   <!-- FINDING PLAYERS -->
   <section id="finding" class="screen center" hidden>
     <div class="finding-card">
+      <div class="arcade-label">CONNECTING TO THE START LINE</div>
       <h2>Finding players…</h2>
       <div class="finding-count"><b id="findCount">1</b> / 32</div>
       <div class="finding-bar"><div id="findFill"></div></div>
@@ -64,8 +68,8 @@
         <div class="pill" id="hudRound">Qualifier</div>
         <div class="pill pill-hot" id="hudSlots">20 to qualify</div>
         <div class="pill" id="hudRank">1st</div>
-        <div class="pill pill-fire" id="hudStreak" hidden>🔥 x2</div>
-        <button class="icon-btn" id="muteBtn" aria-label="Toggle sound">🔊</button>
+        <div class="pill pill-fire" id="hudStreak" hidden>STREAK ×2</div>
+        <button class="icon-btn" id="muteBtn" aria-label="Toggle sound">♪</button>
       <button class="icon-btn" id="quitBtn" aria-label="Leave race" style="margin-left:0">✕</button>
       </div>
       <div class="minimap" id="minimap" aria-hidden="true"><div class="mm-track"></div></div>
@@ -86,6 +90,7 @@
   <!-- ROUND RESULTS -->
   <section id="results" class="screen center" hidden>
     <div class="results-card">
+      <div class="arcade-label">ROUND COMPLETE</div>
       <div class="results-title" id="resTitle"></div>
       <p id="resSub" class="results-sub"></p>
       <ol id="resList" class="standings"></ol>
@@ -97,6 +102,7 @@
   <!-- RUN SUMMARY -->
   <section id="summary" class="screen center" hidden>
     <div class="summary-card">
+      <div class="arcade-label">RACE REPORT</div>
       <div class="results-title" id="sumTitle"></div>
       <div class="sum-grid" id="sumGrid"></div>
       <h3 id="mistakeHead">Let's learn from these</h3>

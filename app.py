@@ -59,7 +59,10 @@ def create_app():
 
     @app.get("/stumble")
     def stumble():
-        return render_template("stumble.html")
+        artwork = {"pip": static_v("art/runner-pixel-sheet.png")}
+        artwork.update({path.stem: static_v(f"art/characters/{path.name}")
+                        for path in sorted((BASE_DIR / "static/art/characters").glob("*.png"))})
+        return render_template("stumble.html", character_artwork=artwork)
 
     @app.get("/privacy")
     def privacy():
@@ -75,9 +78,12 @@ def create_app():
     def service_worker():
         precache = [
             url_for("index"), url_for("stumble"), url_for("privacy"), url_for("questions_js", v=bank_version),
-            static_v("style.css"), static_v("practice.js"), static_v("stumble.css"), static_v("stumble.js"),
+            static_v("style.css"), static_v("practice.js"), static_v("pwa.js"), static_v("stumble.css"), static_v("stumble.js"), static_v("art/runner-pixel-sheet.png"), static_v("art/world-pixel-atlas.png"), static_v("pixel.css"), static_v("art/pixel-logo.svg"),
+            static_v("audio/sunny-overworld.mp3"), static_v("audio/ascension-run.mp3"), static_v("audio/dusk-arpeggio.mp3"),
             url_for("manifest"), url_for("static", filename="icons/icon-192.png"),
         ]
+        precache.extend(static_v(f"art/characters/{path.name}")
+                        for path in sorted((BASE_DIR / "static/art/characters").glob("*.png")))
         cache_name = "spark-" + _digest((bank_version + "".join(precache)).encode())
         body = render_template("sw.js", cache_name=cache_name, precache=json.dumps(precache))
         resp = Response(body, mimetype="text/javascript")
